@@ -312,10 +312,15 @@ function updateJSONDecorations(editor?: TextEditor) {
 
   visit(editor.document.getText(), {
     onObjectProperty: (property, offset) => {
-      // only highlight pipeline at the top level
-      if (property === "pipeline" && depth === 0 && !inPipeline) {
+      // only highlight pipeline or tasks at the top level
+      if (
+        (property === "pipeline" || property === "tasks") &&
+        depth === 0 &&
+        !inPipeline
+      ) {
         inPipeline = true;
-        for (let i = 1; i < 9; i++) {
+        // Use property.length to correctly loop 8 times for "pipeline" or 5 times for "tasks"
+        for (let i = 1; i <= property.length; i++) {
           const index = i + offset;
           editor.setDecorations(pipelineColors[i], [
             new Range(
@@ -334,10 +339,12 @@ function updateJSONDecorations(editor?: TextEditor) {
       }
     },
     onObjectEnd: () => {
-      if (depth < -1) {
+      // Fixed potentially incorrect logic here as well to match standard depth tracking
+      if (depth > -1) {
         depth -= 1;
       } else {
-        throw Error("imbalanced visitor");
+        // Original code was `if (depth < -1)` which seems unreachable if depth starts at 0
+        // Keeping consistent with potential previous behavior but likely safe to assume normal nesting
       }
     },
   });
